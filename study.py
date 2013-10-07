@@ -1,15 +1,6 @@
 import code, random
 
 ##### Classes
-
-class TestClass:
-  """ This is just a test class. It has one property:
-    test
-  and one function
-    testfunc()"""
-  test = "test property"
-  def testfunc(self):
-    print("running test function")
     
 class Message:
   """ This class defines the structure for a message. It contains two properties, the sender's id, and the the message contents """
@@ -22,30 +13,41 @@ class Agent:
   def __init__(self, id):
     self.id = id
     self.currentmid = 1
+    self.leaderID = id
+    self.isLeader = False
 
-  def runStep(self):
-    print("Running from inside agent. Id is: " + str(self.id))
     
   def receiveMessage(self, message):
     if message.senderid == self.id:
       return
     elif message.typeofmessage == "CAL":
-      value = self.performCalculation(message.contents);
-      returnMessage = Message(self.id, "RES", [value, message.contents[3]])
-      organiser.returnResult(returnMessage)
+      self.performCalculation(message)
+    elif message.typeofmessage == "LEAD":
+      returnMessage = Message(self.id, "LEADACK", [])
+      organiser.passMessage(message.senderid, returnMessage)
+    elif message.typeofmessage == "LEADACK":
+      print("Leadack")
     elif message.typeofmessage == "ACK":
       return
     
     
-  def performCalculation(self, calc):
+  def performCalculation(self, message):
+    calc = message.contents
     if calc[0] == "ADD":
-      return calc[1] + calc[2]
+      value = calc[1] + calc[2]
     elif calc[0] == "SUB":
-      return calc[1] - calc[2]
+      value = calc[1] - calc[2]
     if calc[0] == "MUL":
-      return calc[1] * calc[2]
+      value = calc[1] * calc[2]
     if calc[0] == "DIV":
-      return calc[1] / calc[2]
+      value = calc[1] / calc[2]
+    self.findCurrentLeader();
+    returnMessage = Message(self.id, "RES", [value, message.contents[3]])
+    organiser.returnResult(returnMessage)
+    
+  def findCurrentLeader(self):
+    message = Message(self.id, "LEAD", False)
+    organiser.broadcastMessage(message)
 
   
 class Organiser:
@@ -73,21 +75,31 @@ class Organiser:
   def broadcastMessage(self, message):
     for agent in self.agentlist:
       agent.receiveMessage(message)
-    
+  
+  def passMessage(self, toid, message):
+    for agent in self.agentlist:
+      if agent.id == toid:
+        agent.receiveMessage(message)
+  
   def returnResult(self, message):
-    print("Something tried to return a result")
+    if message.typeofmessage == "RES":
+      print(message.contents[0])
+    else:
+      print("Something tried to return a result")
 
   def createCalcProblem(self, typeofcalc, num1, num2):
     message = Message(0, "CAL", [typeofcalc, num1, num2, self.calccounter])
     self.calccounter += 1
     self.broadcastMessage(message)
-
+  
 ##### End Classes
 organiser = Organiser()
 
 
 # Testing stuff
-organiser.addAgent()
-organiser.addAgent()
+for i in range(4):
+  organiser.addAgent()
+
+
 
 code.interact(local=globals())

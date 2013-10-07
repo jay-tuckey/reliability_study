@@ -1,0 +1,6 @@
+organiser.addAgent()
+organiser.broadcastMessage(message)
+
+organiser.createCalcProblem("ADD", 2, 3)
+
+message = Message(0, "CAL", ["ADD", 2, 3])
