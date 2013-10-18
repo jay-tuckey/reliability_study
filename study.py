@@ -80,7 +80,7 @@ class Agent:
     self.findCurrentLeader()
     
     # And now we return the result of the calculation
-    returnMessage = Message(self.id, "RES", [value, message.contents[3]])
+    returnMessage = Message(self.id, "RES", [value])
     if self.isLeader:
       organiser.passMessage(self.secondInCommandID, returnMessage)
       self.currentCalculation.append([self.id, value])
@@ -122,7 +122,7 @@ class AgentPlusone(Agent):
     self.findCurrentLeader()
     
     # And now we return the result of the calculation
-    returnMessage = Message(self.id, "RES", [value, message.contents[3]])
+    returnMessage = Message(self.id, "RES", [value])
     if self.isLeader:
       organiser.passMessage(self.secondInCommandID, returnMessage)
       self.currentCalculation.append([self.id, value])
