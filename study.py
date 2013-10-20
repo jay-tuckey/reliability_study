@@ -63,9 +63,7 @@ class Agent:
         
         organiser.returnResult(returnMessage)
         
-    
-  def performCalculation(self, message):
-    calc = message.contents
+  def returnAnswer(self, calc):
     if calc[0] == "ADD":
       value = calc[1] + calc[2]
     elif calc[0] == "SUB":
@@ -74,6 +72,11 @@ class Agent:
       value = calc[1] * calc[2]
     if calc[0] == "DIV":
       value = calc[1] / calc[2]
+    return value
+  
+  def performCalculation(self, message):
+    calc = message.contents
+    value = self.returnAnswer(calc)
       
     # This section is all about finding who is the current leading agent
     #  and current second in command
@@ -133,7 +136,31 @@ class AgentPlusone(Agent):
       organiser.passMessage(self.leaderID, returnMessage)
       organiser.passMessage(self.secondInCommandID, returnMessage)
 
+class AgentRandomError(Agent):
+  def returnAnswer(self, calc):
+    temp = random.randint(1,10)
+    if temp > 9:
+      addOne = random.randint(-1,1)
+    else:
+      addOne = 0
+    
+    calc = message.contents
+    if calc[0] == "ADD":
+      value = calc[1] + calc[2] + addOne
+    elif calc[0] == "SUB":
+      value = calc[1] - calc[2] + addOne
+    if calc[0] == "MUL":
+      value = calc[1] * calc[2] + addOne
+    if calc[0] == "DIV":
+      value = calc[1] / calc[2] + addOne
+    return value
   
+    
+
+
+class AgentRoundingError(Agent):
+  pass
+
 class Organiser:
   def __init__(self, numAgents=5, argHeuristic=False):
     self.currentid = 1 # This is the id of a new agent to be created
@@ -148,10 +175,14 @@ class Organiser:
       self.numAgents = numAgents
     while len(self.agentlist) < self.numAgents:
       self.addAgent()
-    if argHeuristic == False:
+    if argHeuristic == (False or "NONE"):
       self.argHeuristic = False
     elif argHeuristic == "INSTAKILL":
       self.argHeuristic = "INSTAKILL"
+    elif argHeuristic == "FIVETOKILL":
+      self.argHeuristic = "FIVETOKILL"
+    elif argHeuristic == "FIVETOKILL-LDR-2IC":
+      self.argHeuristic = "FIVETOKILL-LDR-2IC"
    
   def addAgent(self):
     # This function adds a new agent to the set of agents that are
@@ -224,22 +255,31 @@ class Organiser:
     message = Message(0, "CALDONE")
     self.broadcastMessage(message)
     
+    # Check the results are the same, and if not, report the agents
+    reportLead2ic = False
     if len(self.calcBuffer) <= 2:
       if self.calcBuffer[0] == self.calcBuffer[1]:
         val = self.calcBuffer[0]
         self.calcBuffer = []
         return val
+      else:
+        reportLead2ic = True
     else:
       print("Result invalid: Not enough agents returned computation")
+      reportLead2ic = True
+    if reportLead2ic:
+      reportId = self.agentlist[0].id
+      self.reportAgent(reportId)
+      reportId = self.agentlist[1].id
+      self.reportAgent(reportId)
+      
     self.calcBuffer = []
     #self.createCalcProblem(typeofcalc, num1, num2)
     
   
 ##### End Classes
+
 organiser = Organiser(5, "INSTAKILL")
-
-
-# Testing stuff
 
 correctCounter = 0
 incorrectCounter = 0
@@ -258,4 +298,6 @@ for i in range(1000):
 print("Correct: " + str(correctCounter))
 print("Incorrect: " + str(incorrectCounter))
 print("No Return: " + str(noReturnCounter))
+
+
 code.interact(local=globals())
