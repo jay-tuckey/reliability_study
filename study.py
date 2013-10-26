@@ -222,16 +222,21 @@ class Organiser:
   def addAgent(self):
     # This function adds a new agent to the set of agents that are
     # running
-    print("Adding new agent to list")
+    ### print("Adding new agent to list")
     randomnum = random.randint(1, 100)
-    if randomnum <= 70:
+    if randomnum <= 30:
+      #print("Created correct Agent")
       agent = Agent(self.currentid)
-    elif randomnum <= 80:
-      agent = AgentRandomError(self.currentid)
-    elif randomnum <= 90:
-      agent = AgentRoundingError(self.currentid)
-    elif randomnum <= 100:
-      agent = AgentPlusone(self.currentid)
+    else:
+      randomnum = random.randint(1, 100)
+      if randomnum <= 25:
+        agent = AgentRandomError(self.currentid)
+      elif randomnum <= 50:
+        agent = AgentRoundingError(self.currentid)
+      elif randomnum <= 75:
+        agent = AgentPlusone(self.currentid)
+      elif randomnum <= 100:
+        agent = AgentRandomDeath(self.currentid)
     self.currentid += 1
     self.agentlist.append(agent)
 
@@ -249,10 +254,16 @@ class Organiser:
     if self.argHeuristic == False:
       return
     elif self.argHeuristic == "INSTAKILL":
-      print("Testing.... INSTAKILL")
+      ### print("Testing.... INSTAKILL")
       for a in self.reportedAgents:
         self.killAgent(a[0])
         self.reportedAgents.remove(a)
+    elif (self.argHeuristic == "FIVETOKILL") or (self.argHeuristic == "FIVETOKILL-LDR-2IC"):
+      for a in self.reportedAgents:
+        if a[1] >= 5:
+          self.killAgent(a[0])
+          self.reportedAgents.remove(a)
+    
         
     while len(self.agentlist) < self.numAgents:
       self.addAgent()
@@ -297,23 +308,31 @@ class Organiser:
     # Check the results are the same, and if not, report the agents
     reportLead2ic = False
     if len(self.calcBuffer) <= 2:
-      if self.calcBuffer[0] == self.calcBuffer[1]:
-        val = self.calcBuffer[0]
-        self.calcBuffer = []
-        return val
-      else:
+      try:
+        if self.calcBuffer[0] == self.calcBuffer[1]:
+          val = self.calcBuffer[0]
+          self.calcBuffer = []
+          return val
+        else:
+          reportLead2ic = True
+      except IndexError:
         reportLead2ic = True
     else:
       print("Result invalid: Not enough agents returned computation")
       reportLead2ic = True
     if reportLead2ic:
-      reportId = self.agentlist[0].id
-      self.reportAgent(reportId)
-      reportId = self.agentlist[1].id
-      self.reportAgent(reportId)
+      if self.argHeuristic == "FIVETOKILL-LDR-2IC":
+        rangeNum = 5
+      else:
+        rangeNum = 1
+      for i in range(rangeNum):
+        reportId = self.agentlist[0].id
+        self.reportAgent(reportId)
+        reportId = self.agentlist[1].id
+        self.reportAgent(reportId)
       
     self.calcBuffer = []
-    #self.createCalcProblem(typeofcalc, num1, num2)
+    return self.createCalcProblem(typeofcalc, num1, num2)
     
   
 ##### End Classes
@@ -326,19 +345,77 @@ def run():
   incorrectCounter = 0
   noReturnCounter = 0
 
+  # Run testing addition
   for i in range(1000):
     val = organiser.createCalcProblem("ADD", i, 3)
     if (3 + i) == val:
       correctCounter += 1
     else:
-      if type(val) == int:
+      if (type(val) == int) or (type(val) == float):
         incorrectCounter += 1
       else:
         noReturnCounter += 1
-    organiser.killRandomAgent()
+    if (i % 50) == 0:
+      organiser.killRandomAgent()
+  
+  # Run testing addition
+  for i in range(1000):
+    val = organiser.createCalcProblem("SUB", i, 3)
+    if (i - 3) == val:
+      correctCounter += 1
+    else:
+      if (type(val) == int) or (type(val) == float):
+        incorrectCounter += 1
+      else:
+        noReturnCounter += 1
+    if (i % 50) == 0:
+      organiser.killRandomAgent()
+    
+  # Run testing addition
+  for i in range(1000):
+    val = organiser.createCalcProblem("MUL", i, 3)
+    if (i * 3) == val:
+      correctCounter += 1
+    else:
+      if (type(val) == int) or (type(val) == float):
+        incorrectCounter += 1
+      else:
+        noReturnCounter += 1
+    if (i % 50) == 0:
+      organiser.killRandomAgent()
+  
+  # Run testing addition
+  for i in range(1000):
+    val = organiser.createCalcProblem("DIV", i, 3)
+    if (i / 3) == val:
+      correctCounter += 1
+    else:
+      if (type(val) == int) or (type(val) == float):
+        incorrectCounter += 1
+      else:
+        noReturnCounter += 1
+    if (i % 50) == 0:
+      organiser.killRandomAgent()
+  
   print("Correct: " + str(correctCounter))
   print("Incorrect: " + str(incorrectCounter))
   print("No Return: " + str(noReturnCounter))
+  message = Message(0, "RES", [correctCounter, incorrectCounter, noReturnCounter])
+  return message
+def runk():
+  kcorrectCounter = 0
+  kincorrectCounter = 0
+  knoReturnCounter = 0
+  for i in range(100):
+    a = run()
+    kcorrectCounter += a.contents[0]
+    kincorrectCounter += a.contents[1]
+    knoReturnCounter += a.contents[2]
+  print("K Correct: " + str(kcorrectCounter))
+  print("K Incorrect: " + str(kincorrectCounter))
+  print("K No Return: " + str(knoReturnCounter))
+  print("Percent: " + str(round((kincorrectCounter/400000) * 100, 3) ))
+  
 
-
-code.interact(local=globals())
+runk()
+#code.interact(local=globals())
